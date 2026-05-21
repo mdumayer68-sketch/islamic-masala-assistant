@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ইসলামিক মাসআলা সহায়িকা</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0d1f13;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:10px}
+.app{display:flex;flex-direction:column;height:96vh;max-height:700px;width:100%;max-width:480px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.4)}
+.header{background:#1a3a2a;padding:12px 16px}
+.header-title{color:#a0d4a0;font-size:16px;font-weight:600}
+.header-sub{color:#6a9a6a;font-size:11px;margin-top:2px}
+.tabs{display:flex;border-bottom:1px solid #e8e8e8;background:#f9f9f9}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;color:#888;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent}
+.tab.active{color:#1a6a3a;border-bottom:2px solid #1a6a3a;font-weight:600}
+.panel{display:none;flex:1;overflow-y:auto;padding:12px;flex-direction:column;gap:10px}
+.panel.active{display:flex}
+.book-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f5f5;border-radius:10px;border:1px solid #e0e0e0}
+.book-icon{width:36px;height:36px;background:#1a3a2a;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.book-icon i{color:#a0d4a0;font-size:18px}
+.book-info{flex:1;min-width:0}
+.book-name{font-size:13px;font-weight:600;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.book-pages{font-size:11px;color:#888;margin-top:2px}
+.book-del{background:none;border:none;cursor:pointer;color:#aaa;padding:4px;font-size:16px}
+.upload-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:2px dashed #1a6a3a;border-radius:10px;cursor:pointer;color:#1a6a3a;font-size:13px;font-weight:600;background:#f0fff4;width:100%}
+.chat-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:12px}
+.msg{display:flex;flex-direction:column;gap:6px}
+.msg.user{align-items:flex-end}
+.msg.bot{align-items:flex-start}
+.bubble{max-width:90%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.7}
+.msg.user .bubble{background:#1a3a2a;color:#c8e8c8;border-bottom-right-radius:3px}
+.msg.bot .bubble{background:#f4f4f4;color:#222;border:1px solid #e0e0e0;border-bottom-left-radius:3px}
+.ref-box{margin-top:4px;padding:8px 10px;background:#fff;border:1px solid #1a6a3a;border-radius:10px;width:90%}
+.ref-title{font-size:11px;color:#1a6a3a;font-weight:700;margin-bottom:4px}
+.ref-item{font-size:11px;color:#555;padding:3px 0;border-bottom:1px solid #eee}
+.ref-item:last-child{border-bottom:none}
+.input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #eee;background:#fff}
+.chat-input{flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:20px;font-size:13px;background:#f9f9f9;resize:none;height:38px;font-family:sans-serif}
+.send-btn{width:38px;height:38px;background:#1a3a2a;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn i{color:#a0d4a0;font-size:16px}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.key-row{display:flex;gap:8px;margin-bottom:6px}
+.key-input{flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:10px;font-size:12px;background:#f9f9f9}
+.key-save{padding:9px 14px;background:#1a3a2a;color:#a0d4a0;border:none;border-radius:10px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:600}
+.status-bar{padding:6px 12px;font-size:11px;text-align:center;color:#888;background:#f9f9f9;border-top:1px solid #eee}
+.status-bar.ok{color:#1a6a3a;background:#f0fff4}
+.status-bar.err{color:#c0392b;background:#fff5f5}
+.empty-state{text-align:center;padding:30px 20px;color:#aaa;font-size:13px}
+.empty-state i{font-size:40px;color:#ccc;display:block;margin-bottom:10px}
+.processing{display:flex;align-items:center;gap:6px;padding:10px 13px;background:#f4f4f4;border-radius:14px;border:1px solid #e0e0e0;font-size:12px;color:#888}
+.dot{width:6px;height:6px;background:#1a6a3a;border-radius:50%;animation:pulse 1s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+input[type=file]{display:none}
+.info-box{padding:12px 14px;background:#f0fff4;border-radius:10px;border:1px solid #b2dfcb;font-size:12px;color:#1a3a2a;line-height:1.9}
+.danger-btn{padding:10px 14px;background:none;border:1px solid #e0e0e0;border-radius:10px;font-size:13px;color:#c0392b;cursor:pointer;width:100%;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">☪ ইসলামিক মাসআলা সহায়িকা</div>
+    <div class="header-sub">কিতাব থেকে হুবহু উত্তর — মনগড়া কিছু নয়</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('chat',this)">💬 মাসআলা</button>
+    <button class="tab" onclick="showTab('books',this)">📚 কিতাব</button>
+    <button class="tab" onclick="showTab('history',this)">🕐 হিস্টরি</button>
+    <button class="tab" onclick="showTab('settings',this)">⚙️ সেটিংস</button>
+  </div>
+  <div id="panel-chat" class="panel active">
+    <div id="chat-area" class="chat-area">
+      <div class="msg bot">
+        <div class="bubble">আসসালামু আলাইকুম! 👋<br><br>আপনার আপলোড করা কিতাব থেকে যেকোনো মাসআলা জিজ্ঞেস করুন। আমি প্রতিটি কিতাব থেকে <strong>হুবহু সেই অংশ</strong> তুলে দেব।<br><br>প্রথমে 📚 কিতাব ট্যাবে API Key দিন ও কিতাব আপলোড করুন।</div>
+      </div>
+    </div>
+    <div class="input-row">
+      <textarea class="chat-input" id="user-input" placeholder="মাসআলা লিখুন..." onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>
+  <div id="panel-books" class="panel">
+    <div class="key-row">
+      <input type="text" class="key-input" id="api-key-input" placeholder="Groq API Key: gsk_..."/>
+      <button class="key-save" onclick="saveKey()">সেভ</button>
+    </div>
+    <label class="upload-btn" for="pdf-upload"><i class="ti ti-upload"></i> কিতাব আপলোড করুন (PDF)</label>
+    <input type="file" id="pdf-upload" accept=".pdf" multiple onchange="handleUpload(event)"/>
+    <div id="book-list"></div>
+  </div>
+  <div id="panel-history" class="panel"><div id="history-list"></div></div>
+  <div id="panel-settings" class="panel">
+    <div class="info-box"><strong>কীভাবে ব্যবহার করবেন:</strong><br>১. 📚 কিতাব ট্যাবে Groq API Key দিন<br>২. PDF কিতাব আপলোড করুন<br>৩. 💬 মাসআলা ট্যাবে প্রশ্ন করুন<br>৪. সব কিতাব থেকে হুবহু অংশ দেখুন</div>
+    <div class="info-box" style="margin-top:4px"><strong>বৈশিষ্ট্যসমূহ:</strong><br>✓ সব কিতাবে একসাথে খোঁজে<br>✓ হুবহু অংশ তুলে দেয়<br>✓ কিতাব ও পৃষ্ঠা নম্বর বলে<br>✓ মনগড়া কিছু বলে না<br>✓ Chat হিস্টরি সেভ থাকে</div>
+    <button class="danger-btn" onclick="clearHistory()">🗑️ হিস্টরি মুছে ফেলুন</button>
+  </div>
+  <div id="status-bar" class="status-bar">কিতাব আপলোড করুন এবং API Key দিন</div>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let books=[],chatHistory=[],apiKey='';
+function showTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+name).classList.add('active');el.classList.add('active');if(name==='history')renderHistory();if(name==='books')renderBooks();}
+function saveKey(){const k=document.getElementById('api-key-input').value.trim();if(k.startsWith('gsk_')){apiKey=k;setStatus('✅ API Key সেভ হয়েছে','ok');}else{setStatus('❌ সঠিক API Key দিন','err');}}
+function setStatus(msg,type){const s=document.getElementById('status-bar');s.textContent=msg;s.className='status-bar'+(type?' '+type:'');}
+async function handleUpload(e){const files=Array.from(e.target.files);setStatus('কিতাব প্রসেস হচ্ছে...','');for(const file of files){setStatus(file.name+' পড়া হচ্ছে...','');const pages=await extractPDFText(file);books.push({name:file.name.replace('.pdf',''),pages});}setStatus('✅ '+books.length+' টি কিতাব প্রস্তুত','ok');renderBooks();}
+async function extractPDFText(file){return new Promise((resolve)=>{const reader=new FileReader();reader.onload=async function(e){try{const pdf=await pdfjsLib.getDocument({data:new Uint8Array(e.target.result)}).promise;const pages=[];for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const content=await pg.getTextContent();const text=content.items.map(item=>item.str).join(' ');if(text.trim())pages.push({page:i,text:text.trim()});}resolve(pages);}catch(err){resolve([]);}};reader.readAsArrayBuffer(file);});}
+function renderBooks(){const list=document.getElementById('book-list');if(books.length===0){list.innerHTML='<div class="empty-state"><i class="ti ti-books"></i>কোনো কিতাব আপলোড হয়নি</div>';return;}list.innerHTML=books.map((b,i)=>`<div class="book-item"><div class="book-icon"><i class="ti ti-book"></i></div><div class="book-info"><div class="book-name">${b.name}</div><div class="book-pages">${b.pages.length} পৃষ্ঠা লোড হয়েছে</div></div><button class="book-del" onclick="removeBook(${i})"><i class="ti ti-trash"></i></button></div>`).join('');}
+function removeBook(i){books.splice(i,1);renderBooks();setStatus(books.length+' টি কিতাব প্রস্তুত',books.length?'ok':'');}
+function searchBooks(query){const words=query.toLowerCase().split(/\s+/).filter(w=>w.length>1);const results=[];for(const book of books){const scored=book.pages.map(pg=>({...pg,score:words.filter(w=>pg.text.toLowerCase().includes(w)).length})).filter(pg=>pg.score>0).sort((a,b)=>b.score-a.score);if(scored.length>0)results.push({bookName:book.name,topPages:scored.slice(0,3)});}return results;}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+async function sendMessage(){const input=document.getElementById('user-input');const query=input.value.trim();if(!query)return;if(!apiKey){setStatus('❌ আগে API Key সেভ করুন','err');return;}if(books.length===0){setStatus('❌ আগে কিতাব আপলোড করুন','err');return;}input.value='';document.getElementById('send-btn').disabled=true;addMessage('user',query);const procEl=addProcessing();const searchResults=searchBooks(query);let context=searchResults.length===0?'আপলোড করা কিতাবে এই বিষয়ে কিছু পাওয়া যায়নি।':searchResults.map(r=>`===কিতাব: ${r.bookName}===\n`+r.topPages.map(pg=>`[পৃষ্ঠা ${pg.page}]:\n${pg.text.slice(0,1000)}`).join('\n\n')).join('\n\n');const systemPrompt=`আপনি একজন ইসলামিক কিতাবের রেফারেন্স সহায়িকা।\nকঠোর নিয়ম:\n১. শুধুমাত্র নিচের কিতাব থেকে উত্তর দিন\n২. প্রতিটি কিতাব থেকে হুবহু সেই অংশটুকু তুলে দিন\n৩. কোন কিতাব, কোন পৃষ্ঠা প্রতিটির জন্য আলাদা উল্লেখ করুন\n৪. নিজে থেকে কিছু যোগ করবেন না\n৫. একাধিক কিতাবে থাকলে সব কিতাব থেকেই দেখান\n৬. উত্তর বাংলায় দিন\n৭. আরবি ইবারত থাকলে সেটিও হুবহু তুলুন\n৮. ফরম্যাট: প্রতিটি কিতাবের জন্য "📚 [কিতাবের নাম] | পৃষ্ঠা: [নম্বর]" লিখুন`;try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt,messages:[{role:'user',content:`প্রশ্ন: ${query}\n\nকিতাবের অংশসমূহ:\n${context}`}]})});const data=await res.json();const answer=data.content?.map(c=>c.text||'').join('')||'উত্তর পাওয়া যায়নি।';procEl.remove();addBotMessage(answer,searchResults);chatHistory.unshift({time:new Date().toLocaleString('bn-BD'),q:query,a:answer,refs:searchResults});if(chatHistory.length>50)chatHistory.pop();}catch(err){procEl.remove();addMessage('bot','❌ সমস্যা হয়েছে: '+err.message);}document.getElementById('send-btn').disabled=false;}
+function addMessage(role,text){const area=document.getElementById('chat-area');const div=document.createElement('div');div.className='msg '+role;div.innerHTML=`<div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;area.appendChild(div);area.scrollTop=area.scrollHeight;return div;}
+function addBotMessage(text,refs){const area=document.getElementById('chat-area');const div=document.createElement('div');div.className='msg bot';let html=`<div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;if(refs&&refs.length>0){html+=`<div class="ref-box"><div class="ref-title">📚 রেফারেন্স কিতাবসমূহ</div>`;for(const r of refs){const pages=r.topPages.map(p=>p.page).join(', ');html+=`<div class="ref-item"><strong>${r.bookName}</strong> — পৃষ্ঠা: ${pages}</div>`;}html+=`</div>`;}div.innerHTML=html;area.appendChild(div);area.scrollTop=area.scrollHeight;}
+function addProcessing(){const area=document.getElementById('chat-area');const div=document.createElement('div');div.className='msg bot';div.innerHTML=`<div class="processing"><div class="dot"></div><div class="dot"></div><div class="dot"></div> কিতাব থেকে খোঁজা হচ্ছে...</div>`;area.appendChild(div);area.scrollTop=area.scrollHeight;return div;}
+function renderHistory(){const list=document.getElementById('history-list');if(chatHistory.length===0){list.innerHTML='<div class="empty-state"><i class="ti ti-history"></i>এখনো কোনো প্রশ্ন করা হয়নি</div>';return;}list.innerHTML=chatHistory.map(h=>`<div style="padding:10px 12px;background:#f9f9f9;border-radius:10px;border:1px solid #eee;margin-bottom:8px;"><div style="font-size:10px;color:#aaa;margin-bottom:4px;">${h.time}</div><div style="font-size:13px;font-weight:600;color:#222;margin-bottom:4px;">${h.q}</div><div style="font-size:11px;color:#888;">${h.refs.map(r=>r.bookName).join(', ')||'কোনো রেফারেন্স নেই'}</div></div>`).join('');}
+function clearHistory(){if(confirm('সব হিস্টরি মুছে ফেলবেন?')){chatHistory=[];renderHistory();setStatus('✅ হিস্টরি মুছে ফেলা হয়েছে','ok');}}
+renderBooks();
+</script>
+</body>
+</html>
