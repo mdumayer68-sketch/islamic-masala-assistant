@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ইসলামিক মাসআলা সহায়িকা</title>
+<link rel="manifest" href="manifest.json" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07140c;font-family:sans-serif;height:100vh;display:flex;justify-content:center;align-items:center;padding:8px}
+.app{width:100%;max-width:550px;height:98vh;background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 25px rgba(0,0,0,.4)}
+.header{padding:14px;background:#123222}
+.header h2{color:#d5ffd5;font-size:18px}
+.header p{color:#8dc78d;font-size:11px;margin-top:4px}
+.tabs{display:flex;background:#f4f4f4;border-bottom:1px solid #ddd}
+.tab{flex:1;padding:10px 4px;font-size:12px;border:none;background:none;cursor:pointer}
+.tab.active{background:#123222;color:#fff;font-weight:bold}
+.panel{display:none;flex:1;overflow:auto;padding:10px}
+.panel.active{display:block}
+.chat-area{display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;flex-direction:column}
+.msg.user{align-items:flex-end}
+.msg.bot{align-items:flex-start}
+.bubble{max-width:92%;padding:10px;border-radius:12px;font-size:13px;line-height:1.7;word-break:break-word}
+.user .bubble{background:#123222;color:#fff}
+.bot .bubble{background:#f2f2f2;color:#111}
+.input-row{display:flex;gap:8px;padding:10px;border-top:1px solid #ddd}
+.chat-input{flex:1;resize:none;height:45px;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:13px}
+.send-btn{width:45px;height:45px;border:none;border-radius:50%;background:#123222;color:#fff;font-size:18px}
+.upload-btn{display:flex;justify-content:center;align-items:center;height:60px;border:2px dashed #1f6f4a;border-radius:12px;background:#f0fff4;margin-top:10px;cursor:pointer;font-size:13px;font-weight:bold}
+input[type=file]{display:none}
+.key-row{display:flex;gap:8px}
+.key-input{flex:1;padding:10px;border:1px solid #ccc;border-radius:10px}
+.key-btn{padding:10px 14px;border:none;border-radius:10px;background:#123222;color:#fff;font-weight:bold}
+.book-item{padding:10px;border:1px solid #ddd;border-radius:10px;margin-top:8px;background:#fafafa}
+.status{padding:8px;font-size:12px;text-align:center;background:#f7f7f7;border-top:1px solid #ddd}
+.ref{margin-top:6px;padding:8px;background:#fff;border:1px solid #ddd;border-radius:8px;font-size:11px}
+.info{padding:10px;border-radius:10px;background:#f0fff4;line-height:1.8;font-size:12px;border:1px solid #b8e7c7;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+<h2>☪ ইসলামিক মাসআলা সহায়িকা</h2>
+<p>বড় কিতাব • Scan PDF • Permanent Save • Offline Ready</p>
+</div>
+<div class="tabs">
+<button class="tab active" onclick="showTab('chat',this)">💬 মাসআলা</button>
+<button class="tab" onclick="showTab('books',this)">📚 কিতাব</button>
+<button class="tab" onclick="showTab('settings',this)">⚙️ সেটিংস</button>
+</div>
+<div class="panel active" id="panel-chat">
+<div class="chat-area" id="chat-area">
+<div class="msg bot">
+<div class="bubble">
+আসসালামু আলাইকুম 👋<br><br>
+১. প্রথমে Groq API Key দিন<br>
+২. PDF কিতাব আপলোড করুন<br>
+৩. তারপর প্রশ্ন করুন
+</div>
+</div>
+</div>
+<div class="input-row">
+<textarea class="chat-input" id="user-input" placeholder="যেকোনো প্রশ্ন করুন..."></textarea>
+<button class="send-btn" onclick="sendMessage()">➤</button>
+</div>
+</div>
+<div class="panel" id="panel-books">
+<div class="key-row">
+<input class="key-input" id="api-key" placeholder="gsk_..." />
+<button class="key-btn" onclick="saveKey()">সেভ</button>
+</div>
+<label class="upload-btn" for="pdf-upload">📤 PDF কিতাব আপলোড করুন</label>
+<input type="file" id="pdf-upload" multiple accept=".pdf" onchange="uploadBooks(event)" />
+<div id="book-list"></div>
+</div>
+<div class="panel" id="panel-settings">
+<div class="info">
+✅ বড় PDF Support<br>
+✅ Scan PDF OCR Support<br>
+✅ বই Permanently Save<br>
+✅ API Key Save<br>
+✅ Offline Ready<br>
+✅ Android App Ready
+</div>
+<button class="key-btn" style="width:100%" onclick="clearBooks()">🗑 সব বই Delete করুন</button>
+</div>
+<div class="status" id="status">Ready</div>
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let db;
+let books=[];
+let apiKey='';
+window.onload=async()=>{
+await initDB();
+loadKey();
+await loadBooks();
+registerSW();
+};
+function registerSW(){
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('./service-worker.js');
+}
+}
+function initDB(){
+return new Promise((resolve,reject)=>{
+const request=indexedDB.open('IslamicBooksDB',1);
+request.onupgradeneeded=function(e){
+db=e.target.result;
+if(!db.objectStoreNames.contains('books')){
+db.createObjectStore('books',{keyPath:'id'});
+}
+};
+request.onsuccess=function(e){db=e.target.result;resolve();};
+request.onerror=function(){reject();};
+});
+}
+function saveBook(book){
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(['books'],'readwrite');
+const store=tx.objectStore('books');
+store.put(book);
+tx.oncomplete=()=>resolve();
+tx.onerror=()=>reject();
+});
+}
+function loadBooks(){
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(['books'],'readonly');
+const store=tx.objectStore('books');
+const req=store.getAll();
+req.onsuccess=function(){books=req.result||[];renderBooks();resolve();};
+});
+}
+function clearBooks(){
+if(!confirm('সব বই Delete করবেন?')) return;
+const tx=db.transaction(['books'],'readwrite');
+const store=tx.objectStore('books');
+store.clear();
+books=[];
+renderBooks();
+setStatus('সব বই Delete হয়েছে');
+}
+function saveKey(){
+const val=document.getElementById('api-key').value.trim();
+if(!val.startsWith('gsk_')){setStatus('সঠিক API Key দিন');return;}
+apiKey=val;
+localStorage.setItem('groq_key',val);
+setStatus('API Key Save হয়েছে');
+}
+function loadKey(){
+const key=localStorage.getItem('groq_key');
+if(key){apiKey=key;document.getElementById('api-key').value=key;setStatus('Saved API Key Loaded');}
+}
+function showTab(name,el){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+document.getElementById('panel-'+name).classList.add('active');
+el.classList.add('active');
+}
+function setStatus(msg){document.getElementById('status').innerText=msg;}
+async function uploadBooks(e){
+const files=[...e.target.files];
+for(const file of files){
+setStatus('লোড হচ্ছে: '+file.name);
+const pages=await extractPDF(file);
+const book={id:Date.now()+Math.random(),name:file.name,pages};
+books.push(book);
+await saveBook(book);
+setStatus('Save হয়েছে: '+file.name);
+}
+renderBooks();
+}
+async function extractPDF(file){
+const arr=await file.arrayBuffer();
+const pdf=await pdfjsLib.getDocument({data:arr}).promise;
+const pages=[];
+for(let i=1;i<=pdf.numPages;i++){
+setStatus('পৃষ্ঠা পড়া হচ্ছে '+i+' / '+pdf.numPages);
+try{
+const page=await pdf.getPage(i);
+const txt=await page.getTextContent();
+let text=txt.items.map(t=>t.str).join(' ');
+if(text.trim().length<20){
+const viewport=page.getViewport({scale:2});
+const canvas=document.createElement('canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=viewport.width;
+canvas.height=viewport.height;
+await page.render({canvasContext:ctx,viewport}).promise;
+setStatus('OCR চলছে '+i+' নম্বর পৃষ্ঠা');
+const result=await Tesseract.recognize(canvas,'ben+eng+ara');
+text=result.data.text;
+}
+if(text.length>4000){text=text.slice(0,4000);}
+pages.push({page:i,text});
+}catch(err){console.log(err);}
+}
+return pages;
+}
+function renderBooks(){
+const list=document.getElementById('book-list');
+if(!books.length){list.innerHTML='<div class="book-item">কোনো বই নেই</div>';return;}
+list.innerHTML=books.map(b=>`<div class="book-item">📚 ${b.name}<br>পৃষ্ঠা: ${b.pages.length}</div>`).join('');
+}
+function searchBooks(q){
+const words=q.toLowerCase().split(' ');
+const result=[];
+for(const book of books){
+for(const pg of book.pages){
+let score=0;
+for(const w of words){if(pg.text.toLowerCase().indexOf(w)!==-1){score++;}}
+if(score>0){result.push({book:book.name,page:pg.page,text:pg.text,score});}
+}
+}
+result.sort((a,b)=>b.score-a.score);
+return result.slice(0,8);
+}
+async function sendMessage(){
+const input=document.getElementById('user-input');
+const q=input.value.trim();
+if(!q) return;
+if(!apiKey){setStatus('আগে API Key দিন');return;}
+if(!books.length){setStatus('আগে বই Upload করুন');return;}
+input.value='';
+addUser(q);
+const found=searchBooks(q);
+let context='';
+found.forEach(r=>{context+=`\n\nবই:${r.book}\nপৃষ্ঠা:${r.page}\n${r.text}`;});
+addBot('কিতাব খোঁজা হচ্ছে...');
+try{
+const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+body:JSON.stringify({
+model:'llama-3.3-70b-versatile',
+messages:[
+{role:'system',content:'আপনি ইসলামিক কিতাব সহায়িকা। কিতাব থেকে হুবহু উত্তর দিবেন। মনগড়া কিছু বলবেন না। বাংলা ভাষায় উত্তর দিবেন।'},
+{role:'user',content:`প্রশ্ন:${q}\n\nকিতাব:${context}`}
+],
+temperature:0.1,
+max_tokens:1800
+})
+});
+const data=await response.json();
+removeLastBot();
+if(data.error){addBot('Error: '+data.error.message);return;}
+const ans=data.choices[0].message.content;
+let refs='';
+found.forEach(f=>{refs+=`<div>📚 ${f.book} | পৃষ্ঠা ${f.page}</div>`;});
+addBot(ans+`<div class="ref">${refs}</div>`);
+}catch(err){removeLastBot();addBot('সমস্যা হয়েছে');}
+}
+function addUser(t){
+const area=document.getElementById('chat-area');
+const div=document.createElement('div');
+div.className='msg user';
+div.innerHTML=`<div class="bubble">${t}</div>`;
+area.appendChild(div);
+area.scrollTop=area.scrollHeight;
+}
+function addBot(t){
+const area=document.getElementById('chat-area');
+const div=document.createElement('div');
+div.className='msg bot';
+div.innerHTML=`<div class="bubble">${t}</div>`;
+area.appendChild(div);
+area.scrollTop=area.scrollHeight;
+}
+function removeLastBot(){
+const bots=document.querySelectorAll('.msg.bot');
+const last=bots[bots.length-1];
+if(last) last.remove();
+}
+</script>
+</body>
+</html>
